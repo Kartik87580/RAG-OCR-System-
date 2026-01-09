@@ -1,0 +1,143 @@
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #2d3748;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1),
+              0 4px 6px rgba(0,0,0,0.05);
+}
+
+.chat-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.chat-panel-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.clear-history-button {
+  padding: 0.5rem 1rem;
+  background-color: #e53e3e;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.clear-history-button:hover {
+  background-color: #c53030;
+}
+
+.chat-history-area {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+  padding-right: 1rem;
+}
+
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #2d3748;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #5a67d8;
+}
+
+.empty-chat-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.loading-spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 6rem;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid transparent;
+  border-top-color: #9f7aea;
+  border-bottom-color: #9f7aea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  margin-left: 0.75rem;
+  color: #a0aec0;
+}
+
+.question-input-area {
+  display: flex;
+  align-items: center;
+}
+
+.question-textarea {
+  flex-grow: 1;
+  padding: 0.75rem;
+  margin-right: 1rem;
+  background-color: #4a5568;
+  color: #f7fafc;
+  border-radius: 0.5rem;
+  height: 6rem;
+  resize: none;
+  border: none;
+}
+
+.question-textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #9f7aea;
+}
+
+.ask-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #805ad5;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.ask-button:hover {
+  background-color: #6b46c1;
+}
+
+.ask-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

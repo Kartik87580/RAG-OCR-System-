@@ -1,0 +1,86 @@
+/* =========================
+   Upload Panel Wrapper
+========================= */
+.upload-panel {
+  width: 100%;
+}
+
+/* =========================
+   Upload Card
+========================= */
+.upload-card {
+  width: 100%;                 /* ✅ Fill sidebar on desktop */
+  background-color: #2d3748;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
+/* =========================
+   Title
+========================= */
+.upload-title {
+  text-align: left;            /* ✅ Desktop look */
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+/* =========================
+   Drag & Drop Area
+========================= */
+.upload-dropzone {
+  border: 2px dashed #4a5568;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.upload-dropzone p {
+  margin-bottom: 0.75rem;
+  color: #cbd5e0;
+}
+
+/* =========================
+   Buttons
+========================= */
+.browse-button {
+  padding: 0.6rem 1.5rem;
+  background-color: #805ad5;
+  color: #ffffff;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.process-button {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #4c51bf;
+  color: #e2e8f0;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+/* =========================
+   MOBILE VIEW FIX
+========================= */
+@media (max-width: 768px) {
+  .upload-panel {
+    display: flex;
+    justify-content: center;
+  }
+
+  .upload-card {
+    max-width: 360px;          /* ✅ Mobile card style */
+  }
+
+  .upload-title {
+    text-align: center;
+  }
+}

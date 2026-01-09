@@ -1,0 +1,100 @@
+/* =========================
+   GLOBAL
+========================= */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #1a202c;
+  color: #edf2f7;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+}
+
+#root {
+  width: 100%;
+}
+
+/* =========================
+   APP CONTAINER
+========================= */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
+   HEADER
+========================= */
+.app-header {
+  width: 100%;
+  background-color: #2d3748;
+  padding: 1.5rem 2rem;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.app-subtitle {
+  margin-top: 0.4rem;
+  font-size: 1rem;
+  color: #cbd5e0;
+}
+
+/* =========================
+   MAIN CONTENT (FIX)
+========================= */
+.content-wrapper {
+  flex: 1;
+  display: grid;                      /* ✅ GRID FIX */
+  grid-template-columns: 360px 1fr;   /* LEFT + RIGHT */
+  gap: 1.5rem;
+
+  padding: 1.5rem;
+}
+
+/* =========================
+   LEFT PANEL
+========================= */
+.left-panel {
+  background-color: #2d3748;
+  border-radius: 1rem;
+  padding: 1.5rem;
+
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+/* =========================
+   RIGHT PANEL
+========================= */
+.right-panel {
+  background-color: #2d3748;
+  border-radius: 1rem;
+  padding: 1.5rem;
+
+  height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
+   RESPONSIVE (MOBILE ONLY)
+========================= */
+@media (max-width: 900px) {
+  .content-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .left-panel,
+  .right-panel {
+    height: auto;
+  }
+}
