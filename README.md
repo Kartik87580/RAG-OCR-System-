@@ -1,4 +1,6 @@
-# OCR + RAG Project
+# RAG-OCR-System-
+
+A powerful RAG based system use OCR for extracting data from PDF.
 
 This project contains the backend and structure for an OCR and RAG application.
 
