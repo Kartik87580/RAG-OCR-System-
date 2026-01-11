@@ -2,15 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import AnswerBox from './AnswerBox';
 import './ChatPanel.css';
 
-
 const ChatPanel = ({ currentDocumentId }) => {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
 
   const bottomRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  // Auto-scroll to latest message
+  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, loading]);
@@ -22,8 +22,12 @@ const ChatPanel = ({ currentDocumentId }) => {
     setQuestion('');
     setLoading(true);
 
+    // Reset height of textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '50px';
+    }
+
     try {
-      // 🔁 Real RAG API Call
       const response = await fetch('http://localhost:5000/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,14 +37,8 @@ const ChatPanel = ({ currentDocumentId }) => {
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
+      if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
-
-      // The backend text response might contain source info or markdown, currently just text
-      // We'll trust the answer is in data.answer
 
       setChatHistory(prev => [
         ...prev,
@@ -48,11 +46,9 @@ const ChatPanel = ({ currentDocumentId }) => {
           id: Date.now(),
           question: userQuestion,
           answer: data.answer,
-          sourceChunks: [] // Backend doesn't return structured sources yet
+          sourceChunks: []
         }
       ]);
-
-
 
     } catch (error) {
       console.error('Error fetching answer:', error);
@@ -81,7 +77,7 @@ const ChatPanel = ({ currentDocumentId }) => {
         ...prev,
         {
           id: Date.now(),
-          question: "Document Summary",
+          question: "Generate Summary",
           answer: data.answer,
           sourceChunks: []
         }
@@ -93,34 +89,59 @@ const ChatPanel = ({ currentDocumentId }) => {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAsk();
+    }
+  };
+
   return (
     <div className="chat-panel">
       {/* Header */}
       <div className="chat-panel-header">
-        <h2 className="chat-panel-title">Chat Interface</h2>
-        {chatHistory.length > 0 && (
-          <button
-            onClick={handleClearHistory}
-            className="clear-history-button"
-          >
-            Clear History
-          </button>
-        )}
-        <button
-          onClick={handleSummary}
-          className="summary-button"
-          disabled={loading}
-          style={{ marginLeft: '10px', backgroundColor: '#48BB78', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}
-        >
-          Summary
-        </button>
+        <h2 className="chat-panel-title">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          Chat Session
+        </h2>
+
+        <div className="header-actions">
+          {/* Mode Toggle (Visual Only as backend is same) */}
+          <div className="mode-toggle">
+            <button className="toggle-btn active">Chat</button>
+            <button
+              className="toggle-btn"
+              onClick={handleSummary}
+              disabled={loading}
+            >
+              Summary
+            </button>
+          </div>
+
+          {chatHistory.length > 0 && (
+            <button
+              onClick={handleClearHistory}
+              className="clear-btn"
+              title="Clear History"
+            >
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chat Area */}
       <div className="chat-history-area custom-scrollbar">
         {chatHistory.length === 0 && !loading && (
           <div className="empty-chat-message">
-            Start a conversation by asking a question!
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="var(--border-light)">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p>Ask a question about your documents to get started.</p>
           </div>
         )}
 
@@ -135,9 +156,9 @@ const ChatPanel = ({ currentDocumentId }) => {
         ))}
 
         {loading && (
-          <div className="loading-spinner-container">
-            <div className="loading-spinner"></div>
-            <p className="loading-text">Fetching answer...</p>
+          <div className="loading-indicator">
+            <div className="spinner"></div>
+            <span>Thinking...</span>
           </div>
         )}
 
@@ -146,25 +167,25 @@ const ChatPanel = ({ currentDocumentId }) => {
 
       {/* Input Area */}
       <div className="question-input-area">
-        <textarea
-          className="question-textarea"
-          placeholder="Ask a question about your documents..."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleAsk();
-            }
-          }}
-        />
-        <button
-          className="ask-button"
-          onClick={handleAsk}
-          disabled={loading || !question.trim()}
-        >
-          Ask
-        </button>
+        <div className="input-wrapper">
+          <textarea
+            ref={textareaRef}
+            className="question-textarea"
+            placeholder="Type your question..."
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button
+            className="send-btn"
+            onClick={handleAsk}
+            disabled={loading || !question.trim()}
+          >
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

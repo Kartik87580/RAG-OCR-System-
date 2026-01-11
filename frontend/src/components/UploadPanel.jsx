@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './UploadPanel.css';
 
 const UploadPanel = ({ onUploadSuccess }) => {
@@ -6,9 +6,14 @@ const UploadPanel = ({ onUploadSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
     const uploadedFile = event.target.files[0];
+    validateAndSetFile(uploadedFile);
+  };
+
+  const validateAndSetFile = (uploadedFile) => {
     if (uploadedFile && uploadedFile.type === 'application/pdf') {
       setFile(uploadedFile);
       setUploadProgress(0);
@@ -32,28 +37,22 @@ const UploadPanel = ({ onUploadSuccess }) => {
     event.preventDefault();
     setIsDragOver(false);
     const uploadedFile = event.dataTransfer.files[0];
-    if (uploadedFile && uploadedFile.type === 'application/pdf') {
-      setFile(uploadedFile);
-      setUploadProgress(0);
-      setUploadSuccess(false);
-    } else {
-      alert('Please drop a valid PDF file.');
-      setFile(null);
-    }
+    validateAndSetFile(uploadedFile);
+  };
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleUpload = async () => {
-    if (!file) {
-      alert('Please select a PDF file to upload.');
-      return;
-    }
+    if (!file) return;
 
     setUploadProgress(10);
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      // Start fake progress for better UX before request completes
+      // UX Fake Progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) return prev;
@@ -67,7 +66,6 @@ const UploadPanel = ({ onUploadSuccess }) => {
       });
 
       const data = await response.json();
-
       clearInterval(progressInterval);
 
       if (response.ok) {
@@ -87,71 +85,91 @@ const UploadPanel = ({ onUploadSuccess }) => {
     }
   };
 
+  const isProcessing = uploadProgress > 0 && uploadProgress < 100;
+
   return (
-    <div className="pdf-upload-panel">
-      <h2 className="panel-title">Upload Your PDF Document</h2>
+    <div className="upload-card">
+      <h2 className="panel-title">Upload Document</h2>
 
-      <div
-        className={`drag-drop-area ${isDragOver ? 'drag-over' : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <p className="drag-drop-text">Drag & drop your PDF here, or</p>
-        <label
-          htmlFor="pdf-upload"
-          className="browse-button"
+      {!file ? (
+        <div
+          className={`drag-drop-area ${isDragOver ? 'drag-over' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleBrowseClick}
+          style={{ cursor: 'pointer' }}
         >
-          Browse Files
-        </label>
-        <input
-          id="pdf-upload"
-          type="file"
-          accept=".pdf"
-          onChange={handleFileChange}
-          className="hidden-input"
-        />
-        {file && <p className="selected-file-name">Selected: {file.name}</p>}
-      </div>
+          <div className="upload-icon-wrapper">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+          <p className="drag-drop-text">
+            Drag & drop PDF here, or <span className="browse-button">Browse</span>
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            onChange={handleFileChange}
+            className="hidden-input"
+          />
+        </div>
+      ) : (
+        <div className="file-info-card">
+          <div className="file-icon">
+            <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div className="file-details">
+            <div className="file-name">{file.name}</div>
+            <div className="file-status">
+              {(file.size / 1024 / 1024).toFixed(2)} MB
+            </div>
+          </div>
 
-      {file && !uploadSuccess && (
-        <div className="progress-bar-container">
-          <div
-            className="progress-bar-fill"
-            style={{ width: `${uploadProgress}%` }}
-          ></div>
-          <span className="progress-text">
-            {uploadProgress}%
-          </span>
+          {/* Replace file button */}
+          {!isProcessing && !uploadSuccess && (
+            <button onClick={() => setFile(null)} style={{ padding: '4px', opacity: 0.6 }}>
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       )}
 
-      {uploadSuccess && (
-        <div className="success-message">
-          <svg
-            className="success-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          PDF Uploaded Successfully!
+      {/* Progress & Success States */}
+      {file && (
+        <div className="status-area">
+          {isProcessing && (
+            <div className="progress-container">
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${uploadProgress}%` }}></div>
+              </div>
+              <span className="progress-text">{uploadProgress}% Processing...</span>
+            </div>
+          )}
+
+          {uploadSuccess && (
+            <div className="success-state">
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Ready to Chat</span>
+            </div>
+          )}
         </div>
       )}
 
       <button
-        className="process-document-button"
+        className="process-btn"
         onClick={handleUpload}
-        disabled={!file || (uploadProgress > 0 && uploadProgress < 100)}
+        disabled={!file || isProcessing || uploadSuccess}
       >
-        Process Document
+        {uploadSuccess ? 'Document Processed' : isProcessing ? 'Processing...' : 'Upload & Process'}
       </button>
     </div>
   );

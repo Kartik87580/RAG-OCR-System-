@@ -8,6 +8,70 @@ from config import GEMINI_API_KEY
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
+def detect_mode(question: str) -> str:
+    """
+    Detects if the user wants a full summary or a quick chat answer.
+    """
+    keywords = ["summary", "summarize", "overview", "explain document", "full explanation", "document summary"]
+    q_lower = question.lower()
+    
+    for k in keywords:
+        if k in q_lower:
+            return "summary"
+            
+    return "chat"
+
+SUMMARY_PROMPT_TEMPLATE = """You are an assistant that summarizes documents.
+
+Format the answer in clean Markdown using this structure:
+
+## Summary
+(2–3 short sentences)
+
+## Key Concepts
+- Bullet points only
+
+## Architecture / Details
+- Bullet points
+
+## Conclusion
+(1 short paragraph)
+
+## Sources
+- Page X — Section Y
+
+Rules:
+- Use simple language.
+- No emojis.
+- No inline sources.
+- No markdown inside sentences.
+- Use blank lines between sections.
+
+Context:
+{retrieved_context}
+
+Question:
+{user_question}
+
+Answer:"""
+
+CHAT_PROMPT_TEMPLATE = """You are a helpful assistant chatting with a user about the uploaded document.
+
+Rules:
+- Answer in 2–5 short sentences.
+- No headings, no bullet points, no markdown.
+- No emojis.
+- Use simple language.
+- If not found in the document, say: "I could not find that in the document."
+
+Context:
+{retrieved_context}
+
+Question:
+{user_question}
+
+Answer:"""
+
 def build_rag_context(question, document_id=None):
     # Step 4: RAG Query Function
     q_vec = embed_chunks([question])[0]
@@ -34,7 +98,8 @@ def build_rag_context(question, document_id=None):
         # Extract source (deduplicate later if needed, but list implied)
         source = {
             "page": payload.get("page"),
-            "chapter": payload.get("chapter")
+            "chapter": payload.get("chapter"),
+            "section": payload.get("section")
         }
         if source not in sources:
             sources.append(source)
@@ -43,26 +108,19 @@ def build_rag_context(question, document_id=None):
     formatted_context_parts = []
     for c in retrieved_chunks:
         meta = c["metadata"]
-        header = f"[Source: Page {meta.get('page', '?')}, Chapter: {meta.get('chapter', 'Unknown')}]"
+        header = f"[Source: Page {meta.get('page', '?')}, Chapter: {meta.get('chapter', 'Unknown')}, Section: {meta.get('section', 'Unknown')}]"
         formatted_context_parts.append(f"{header}\n{c['content']}")
     
     context_str = "\n\n".join(formatted_context_parts)
     
-    prompt = f"""You are an expert AI assistant designed to answer questions based strictly on the provided document context.
+    # DETERMINE MODE & SELECT PROMPT
+    mode = detect_mode(question)
+    print(f"DEBUG: Detected Mode: {mode}")
 
-INSTRUCTIONS:
-1. Answer the user's question using ONLY the provided context below.
-2. If the answer is not in the context, explicitly state "I cannot answer this based on the provided document." Do not make up information.
-3. Whenever possible, refer to the specific Page or Chapter mentioned in the [Source] tags to support your answer.
-4. Keep the answer professional, concise, and accurate.
-
-CONTEXT:
-{context_str}
-
-USER QUESTION: 
-{question}
-
-ANSWER:"""
+    if mode == "summary":
+        prompt = SUMMARY_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
+    else:
+        prompt = CHAT_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
     
     return {
         "retrieved_chunks": retrieved_chunks,

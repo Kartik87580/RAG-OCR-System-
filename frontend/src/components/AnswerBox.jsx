@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import './AnswerBox.css';
 
 const AnswerBox = ({
@@ -9,40 +10,44 @@ const AnswerBox = ({
 }) => {
   return (
     <div className="answer-box-container">
-      
-      {/* User Question */}
+
+      {/* User Bubble */}
       {isUserQuestion && question && (
         <div className="user-question-bubble">
-          <p className="user-question-label">You asked:</p>
           <p className="user-question-text">{question}</p>
         </div>
       )}
 
-      {/* AI Answer */}
-      <div className="ai-answer-card">
-        <h3 className="ai-answer-title">AI-Generated Answer</h3>
-        <p className="ai-answer-text">{answer}</p>
-
-        {/* Source Chunks */}
-        {sourceChunks.length > 0 && (
-          <div className="source-chunks-section">
-            <h4 className="source-chunks-title">
-              Source Document Chunks
-            </h4>
-            <ul className="source-chunks-list">
-              {sourceChunks.map((chunk) => (
-                <li
-                  key={`${chunk}-${Math.random()}`}
-                  className="source-chunk-item"
-                >
-                  {chunk}
-                </li>
-              ))}
-            </ul>
+      {/* AI Bubble */}
+      {answer && (
+        <div className="ai-answer-card">
+          <div className="ai-answer-title">
+            AI Assistant
           </div>
-        )}
-      </div>
+          <div className="ai-answer-markdown">
+            <ReactMarkdown>{answer}</ReactMarkdown>
+          </div>
 
+          {/* Source Chunks */}
+          {sourceChunks && sourceChunks.length > 0 && (
+            <div className="source-chunks-section">
+              <h4 className="source-chunks-title">
+                Sources
+              </h4>
+              <ul className="source-chunks-list">
+                {sourceChunks.map((chunk, idx) => (
+                  <li
+                    key={idx}
+                    className="source-chunk-item"
+                  >
+                    {chunk}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
