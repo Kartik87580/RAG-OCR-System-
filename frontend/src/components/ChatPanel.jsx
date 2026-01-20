@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AnswerBox from './AnswerBox';
+import { supabase } from '../services/supabase';
 import './ChatPanel.css';
 
-const ChatPanel = ({ currentDocumentId }) => {
+const ChatPanel = ({ currentDocumentId, userId }) => {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
@@ -14,6 +15,40 @@ const ChatPanel = ({ currentDocumentId }) => {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, loading]);
+
+  // Load History
+  useEffect(() => {
+    console.log("ChatPanel: useEffect triggered", { currentDocumentId, userId });
+    if (currentDocumentId && userId) {
+      setLoading(true);
+      const fetchHistory = async () => {
+        console.log(`Fetching history for doc: ${currentDocumentId}, user: ${userId}`);
+        const { data, error } = await supabase
+          .from('chats')
+          .select('*')
+          .eq('document_id', currentDocumentId)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error("Error fetching history:", error);
+        } else if (data) {
+          console.log("History fetched:", data.length, "records");
+          const history = data.map(item => ({
+            id: item.id,
+            question: item.question,
+            answer: item.answer,
+            sourceChunks: [] // History doesn't have chunks yet unless we store them.
+          }));
+          setChatHistory(history);
+        }
+        setLoading(false);
+      };
+      fetchHistory();
+    } else {
+      setChatHistory([]);
+    }
+  }, [currentDocumentId, userId]);
 
   const handleAsk = async () => {
     if (!question.trim() || loading) return;
@@ -33,7 +68,8 @@ const ChatPanel = ({ currentDocumentId }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: userQuestion,
-          document_id: currentDocumentId
+          document_id: currentDocumentId,
+          user_id: userId
         })
       });
 
@@ -69,7 +105,10 @@ const ChatPanel = ({ currentDocumentId }) => {
       const response = await fetch('http://localhost:5000/api/summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ document_id: currentDocumentId })
+        body: JSON.stringify({
+          document_id: currentDocumentId,
+          user_id: userId
+        })
       });
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
@@ -120,17 +159,7 @@ const ChatPanel = ({ currentDocumentId }) => {
             </button>
           </div>
 
-          {chatHistory.length > 0 && (
-            <button
-              onClick={handleClearHistory}
-              className="clear-btn"
-              title="Clear History"
-            >
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          )}
+
         </div>
       </div>
 

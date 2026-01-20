@@ -29,8 +29,7 @@ def store_embeddings(chunks_data, vectors):
 
 from qdrant_client import models
 
-def search(query_vector, k=5, document_id=None):
-    # client.search is missing in this version, using query_points
+def search(query_vector, k=4, document_id=None):
     query_filter = None
     if document_id:
         query_filter = models.Filter(
@@ -42,18 +41,56 @@ def search(query_vector, k=5, document_id=None):
             ]
         )
 
-    result = client.query_points(
-        collection_name=COLLECTION,
-        query=query_vector,
-        query_filter=query_filter,
-        limit=k
-    )
-    return result.points
+    try:
+        # Using query_points (Universal Query) as client.search seems unavailable
+        result = client.query_points(
+            collection_name=COLLECTION,
+            query=query_vector,
+            query_filter=query_filter,
+            limit=k
+        )
+        return result.points
+    except Exception as e:
+        print(f"VECTOR SEARCH FAILED: {e}")
+        # Log detailed cloud error if available
+        if hasattr(e, 'response') and hasattr(e.response, 'text'):
+            print(f"Qdrant Error Response: {e.response.text}")
+        raise e
+
+
+def delete_vectors_by_doc_id(document_id):
+    """Delete all vectors associated with a document ID."""
+    try:
+        client.delete(
+            collection_name=COLLECTION,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="document_id",
+                            match=models.MatchValue(value=document_id)
+                        )
+                    ]
+                )
+            )
+        )
+        print(f"Vectors for document {document_id} deleted successfully.")
+    except Exception as e:
+        print(f"Error deleting vectors for {document_id}: {e}")
+        # Log but maybe don't raise? Or raise if critical. 
+        # Usually better to try and clean up as much as possible.
+        raise e
 
 if __name__ == "__main__":
     query = "what is generative ai"
     # Convert query text to vector
     query_vectors = embed_chunks([query])
     # Search with the first vector
-    retrieved = search(query_vectors[0])
-    print(retrieved[0].payload['text'])
+    try:
+        retrieved = search(query_vectors[0])
+        if retrieved:
+            print(f"Result: {retrieved[0].payload.get('text', 'No text')}")
+        else:
+            print("No results found.")
+    except Exception as e:
+        print(f"Test failed: {e}")

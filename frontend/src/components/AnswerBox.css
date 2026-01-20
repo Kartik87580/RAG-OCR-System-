@@ -2,7 +2,7 @@
 .answer-box-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   width: 100%;
 }
 
@@ -11,10 +11,10 @@
   align-self: flex-end;
   background-color: var(--primary);
   color: white;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1.25rem;
   border-radius: var(--radius-xl) var(--radius-xl) 0 var(--radius-xl);
   max-width: 80%;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   animation: slideInRight 0.3s ease;
   position: relative;
 }
@@ -22,19 +22,19 @@
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }
 
 .user-question-text {
   margin: 0;
-  font-size: 0.9375rem;
-  line-height: 1.5;
+  font-size: var(--text-base);
+  line-height: 1.6;
 }
 
 /* AI Message */
@@ -43,33 +43,35 @@
   background-color: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: 0 var(--radius-xl) var(--radius-xl) var(--radius-xl);
-  padding: 1.25rem;
-  max-width: 85%;
+  padding: 1.5rem;
+  max-width: 90%;
   box-shadow: var(--shadow-sm);
   animation: slideInLeft 0.3s ease;
+  width: 100%;
 }
 
 @keyframes slideInLeft {
   from {
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }
 
 .ai-answer-title {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 1rem 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-weight: 600;
 }
 
 .ai-answer-title::before {
@@ -79,45 +81,65 @@
   height: 8px;
   background-color: var(--success);
   border-radius: 50%;
+  box-shadow: 0 0 5px var(--success);
 }
 
 .ai-answer-markdown {
-  font-size: 0.9375rem;
+  font-size: var(--text-base);
   color: var(--text-main);
   line-height: 1.7;
 }
 
 /* Markdown Styles */
 .ai-answer-markdown p {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .ai-answer-markdown p:last-child {
   margin-bottom: 0;
 }
 
+.ai-answer-markdown strong {
+  color: white;
+  font-weight: 600;
+}
+
 .ai-answer-markdown h1,
 .ai-answer-markdown h2,
 .ai-answer-markdown h3 {
-  color: white;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
+  color: var(--text-main);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ai-answer-markdown h3 {
   font-size: 1.1rem;
 }
 
 .ai-answer-markdown code {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.2);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: 'Fira Code', monospace;
   font-size: 0.9em;
+  color: var(--accent);
 }
 
 .ai-answer-markdown pre {
-  background-color: #111;
+  background-color: #0d1117;
   padding: 1rem;
   border-radius: var(--radius-md);
   overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--border-light);
+}
+
+.ai-answer-markdown pre code {
+  background-color: transparent;
+  padding: 0;
+  color: var(--text-secondary);
 }
 
 .ai-answer-markdown ul,
@@ -126,18 +148,24 @@
   margin-bottom: 1rem;
 }
 
+.ai-answer-markdown li {
+  margin-bottom: 0.5rem;
+}
+
 /* Source Chunks */
 .source-chunks-section {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-medium);
 }
 
 .source-chunks-title {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.75rem 0;
   text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 
 .source-chunks-list {
@@ -146,14 +174,19 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .source-chunk-item {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  background-color: rgba(255, 255, 255, 0.03);
-  padding: 0.5rem;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background-color: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem;
   border-radius: var(--radius-md);
-  border-left: 2px solid var(--text-accent);
+  border-left: 3px solid var(--primary);
+  line-height: 1.5;
+}
+
+.source-chunk-item strong {
+  color: var(--text-main);
 }

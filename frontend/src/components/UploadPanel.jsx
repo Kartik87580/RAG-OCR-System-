@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './UploadPanel.css';
 
-const UploadPanel = ({ onUploadSuccess }) => {
+const UploadPanel = ({ onUploadSuccess, userId }) => {
   const [file, setFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -46,10 +46,15 @@ const UploadPanel = ({ onUploadSuccess }) => {
 
   const handleUpload = async () => {
     if (!file) return;
+    if (!userId) {
+      alert("You must be logged in to upload.");
+      return;
+    }
 
     setUploadProgress(10);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("user_id", userId);
 
     try {
       // UX Fake Progress

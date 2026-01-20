@@ -6,7 +6,32 @@ import google.generativeai as genai
 from config import GEMINI_API_KEY
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.5-flash")
+# model = genai.GenerativeModel("gemini-1.5-flash") # 1.5 not found in this env
+model = genai.GenerativeModel("gemini-2.5-flash") 
+
+def detect_mode(question: str) -> str:
+    """
+    Detects if the user wants a full summary or a quick chat answer.
+    """
+    keywords = ["summary", "summarize", "overview", "explain document", "full explanation", "document summary"]
+    q_lower = question.lower()
+    
+    for k in keywords:
+        if k in q_lower:
+            return "summary"
+            
+    return "chat"
+
+# ... (rest of file) ...
+
+# UPDATE THE RETRY LOGIC MSG IN answer_question FUNCTION (Implicitly targeting it via context if I can, or just let me rewrite the function)
+# I will use the EndLine/StartLine to target the bottom of the file where answer_question is
+
+# Wait, I need to match the file content.
+# The previous step replaced lines 6-7 and added imports.
+# I will just replace `model = ...` line.
+
+# And then I will replace the return string in answer_question.
 
 def detect_mode(question: str) -> str:
     """
@@ -109,18 +134,28 @@ def build_rag_context(question, document_id=None):
     for c in retrieved_chunks:
         meta = c["metadata"]
         header = f"[Source: Page {meta.get('page', '?')}, Chapter: {meta.get('chapter', 'Unknown')}, Section: {meta.get('section', 'Unknown')}]"
-        formatted_context_parts.append(f"{header}\n{c['content']}")
+        # Escape curly braces for .format() safety
+        safe_content = c['content'].replace("{", "{{").replace("}", "}}")
+        formatted_context_parts.append(f"{header}\n{safe_content}")
     
     context_str = "\n\n".join(formatted_context_parts)
+    if not context_str.strip():
+        context_str = "No relevant content found in document."
     
     # DETERMINE MODE & SELECT PROMPT
     mode = detect_mode(question)
     print(f"DEBUG: Detected Mode: {mode}")
+    print(f"DEBUG: Context Length: {len(context_str)} chars")
 
-    if mode == "summary":
-        prompt = SUMMARY_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
-    else:
-        prompt = CHAT_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
+    try:
+        if mode == "summary":
+            prompt = SUMMARY_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
+        else:
+            prompt = CHAT_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
+    except Exception as e:
+        print(f"Error formatting prompt: {e}")
+        # Fallback to simple concatenation if format fails (unlikely with escaping but safe)
+        prompt = f"Context:\n{context_str}\n\nQuestion:\n{question}\n\nAnswer:"
     
     return {
         "retrieved_chunks": retrieved_chunks,
@@ -128,10 +163,29 @@ def build_rag_context(question, document_id=None):
         "sources": sources
     }
 
+import time
+from google.api_core import exceptions
+
 def answer_question(question, document_id=None):
     rag_data = build_rag_context(question, document_id=document_id)
     
-    # Generate answer using the prompt
-    response = model.generate_content(rag_data["prompt"])
-    return response.text
+    # Retry logic for Rate Limits (429 ResourceExhausted)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            # Generate answer using the prompt
+            response = model.generate_content(rag_data["prompt"])
+            return response.text
+        except exceptions.ResourceExhausted:
+            if attempt < max_retries - 1:
+                sleep_time = (attempt + 1) * 2  # 2s, 4s, 6s...
+                print(f"Rate limit hit. Retrying in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+            else:
+                return "### ⚠️ Rate Limit Reached\n\nYou have hit the free tier limit for the AI model (Gemini 2.5 Flash). Please wait a minute before trying again."
+        except Exception as e:
+             # Pass other errors up
+             raise e
+             
+    return "Failed to generate answer."
 

@@ -2,19 +2,23 @@
   background-color: var(--bg-panel);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
-  padding: 1.5rem;
+  padding: 0;
+  /* Remove padding here, handling in Dashboard card wrap or internal */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   height: 100%;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
+  /* Shadow handled by container */
+  border: none;
+  /* Border handled by container */
 }
 
+/* Note: Dashboard wraps this in a .card, so we can be transparent or minimal */
+
 .panel-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-main);
+  display: none;
+  /* Hidden because Dashboard Modal has a title */
 }
 
 /* Drag Drop Area */
@@ -24,24 +28,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 2px dashed var(--border-light);
+  border: 2px dashed var(--border-medium);
   border-radius: var(--radius-lg);
-  padding: 2rem;
+  padding: 3rem 2rem;
   transition: all 0.2s ease;
   background-color: rgba(255, 255, 255, 0.01);
   text-align: center;
-  gap: 1rem;
-  min-height: 200px;
+  gap: 1.25rem;
+  min-height: 250px;
+  cursor: pointer;
+}
+
+.drag-drop-area:hover {
+  border-color: var(--primary);
+  background-color: rgba(59, 130, 246, 0.02);
 }
 
 .drag-drop-area.drag-over {
   border-color: var(--primary);
   background-color: rgba(59, 130, 246, 0.05);
+  transform: scale(0.99);
 }
 
 .upload-icon-wrapper {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background-color: var(--bg-input);
   display: flex;
@@ -49,18 +60,25 @@
   justify-content: center;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
+  border: 1px solid var(--border-light);
+  transition: all 0.2s;
+}
+
+.drag-drop-area:hover .upload-icon-wrapper {
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .drag-drop-text {
-  font-size: 0.875rem;
-  color: var(--text-muted);
+  font-size: var(--text-base);
+  color: var(--text-secondary);
   margin: 0;
 }
 
 .browse-button {
   color: var(--primary);
-  font-weight: 500;
-  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .browse-button:hover {
@@ -76,58 +94,83 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.25rem;
   background-color: var(--bg-input);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-medium);
+  margin-bottom: 0.5rem;
 }
 
 .file-icon {
   color: var(--error);
   /* PDF Red */
   flex-shrink: 0;
+  background: rgba(239, 68, 68, 0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .file-details {
   flex: 1;
   overflow: hidden;
+  text-align: left;
 }
 
 .file-name {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-main);
+  margin-bottom: 2px;
 }
 
 .file-status {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
 /* Progress Bar */
 .progress-container {
-  margin-top: 0.5rem;
+  margin-top: 1rem;
+  width: 100%;
 }
 
 .progress-bar {
-  height: 6px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  height: 8px;
+  background-color: var(--bg-input);
+  border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
+  border: 1px solid var(--border-light);
 }
 
 .progress-fill {
   height: 100%;
   background-color: var(--primary);
   transition: width 0.3s ease;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+  background-size: 1rem 1rem;
+  animation: progress-stripe 1s linear infinite;
+}
+
+@keyframes progress-stripe {
+  from {
+    background-position: 1rem 0;
+  }
+
+  to {
+    background-position: 0 0;
+  }
 }
 
 .progress-text {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   text-align: right;
   display: block;
@@ -138,9 +181,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   color: var(--success);
   animation: fadeIn 0.5s ease;
+  padding: 1rem 0;
+}
+
+.success-state svg {
+  background: var(--success-bg);
+  border-radius: 50%;
+  padding: 0.5rem;
+  width: 48px;
+  height: 48px;
 }
 
 @keyframes fadeIn {
@@ -158,22 +210,26 @@
 /* Main Action Button */
 .process-btn {
   width: 100%;
-  padding: 0.875rem;
+  padding: 1rem;
   background-color: var(--primary);
   color: white;
   border-radius: var(--radius-lg);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   margin-top: auto;
-  /* Push to bottom */
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
 }
 
-.process-btn:hover {
+.process-btn:hover:not(:disabled) {
   background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(59, 130, 246, 0.3);
 }
 
 .process-btn:disabled {
   background-color: var(--bg-input);
   color: var(--text-muted);
   cursor: not-allowed;
+  box-shadow: none;
 }
