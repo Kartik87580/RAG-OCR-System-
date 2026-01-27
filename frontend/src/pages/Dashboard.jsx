@@ -6,6 +6,8 @@ import { supabase } from '../services/supabase';
 import UploadPanel from '../components/UploadPanel';
 import ChatPanel from '../components/ChatPanel';
 
+import { API_BASE_URL } from '../api/config';
+
 export default function Dashboard() {
     const { user, signOut, loading } = useAuth();
     const navigate = useNavigate();
@@ -33,9 +35,10 @@ export default function Dashboard() {
 
         try {
             // Call backend to delete from DB, Storage, and Vector DB
-            const response = await fetch(`http://localhost:5000/api/documents/${docId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/documents/${docId}`, {
                 method: 'DELETE',
             });
+
 
             if (!response.ok) {
                 const data = await response.json();

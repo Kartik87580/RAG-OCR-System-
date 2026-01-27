@@ -3,6 +3,8 @@ import AnswerBox from './AnswerBox';
 import { supabase } from '../services/supabase';
 import './ChatPanel.css';
 
+import { API_BASE_URL } from '../api/config';
+
 const ChatPanel = ({ currentDocumentId, userId }) => {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,7 +65,7 @@ const ChatPanel = ({ currentDocumentId, userId }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/query', {
+      const response = await fetch(`${API_BASE_URL}/api/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -102,7 +104,7 @@ const ChatPanel = ({ currentDocumentId, userId }) => {
     if (loading) return;
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/summary', {
+      const response = await fetch(`${API_BASE_URL}/api/summary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -110,6 +112,7 @@ const ChatPanel = ({ currentDocumentId, userId }) => {
           user_id: userId
         })
       });
+
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
       setChatHistory(prev => [

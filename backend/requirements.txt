@@ -9,3 +9,4 @@ qdrant-client==1.16.2
 sentence-transformers==5.2.0
 supabase==2.27.1
 uvicorn==0.40.0
+gunicorn==20.1.0

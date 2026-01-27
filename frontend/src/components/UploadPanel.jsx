@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import './UploadPanel.css';
 
+import { API_BASE_URL } from '../api/config';
+
 const UploadPanel = ({ onUploadSuccess, userId }) => {
   const [file, setFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -65,10 +67,11 @@ const UploadPanel = ({ onUploadSuccess, userId }) => {
         });
       }, 500);
 
-      const response = await fetch('http://localhost:5000/api/documents/upload', {
+      const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
         method: 'POST',
         body: formData,
       });
+
 
       const data = await response.json();
       clearInterval(progressInterval);
