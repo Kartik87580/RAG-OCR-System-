@@ -1,43 +1,37 @@
-# Pipeline for processing PDFs
-
-import sys
-import os
-import tempfile
-import uuid
-
-import shutil
-
-# Add the backend directory to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from services.ocr_service import init_ocr, fast_extract_pdf
-from services.chunk_service import extract_hierarchy_and_chunk
-from services.embedding_service import embed_chunks
-from services.vector_service import store_embeddings
 from config import SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY
-from supabase import create_client, Client
-import time
 
-# Use Service Key if available to bypass RLS for backend operations
-if SUPABASE_SERVICE_KEY:
-    print("KEYS: Using Supabase SERVICE_KEY")
-    key_to_use = SUPABASE_SERVICE_KEY
-else:
-    print("KEYS: Using Supabase ANON_KEY (Ensure RLS policies allow this)")
-    key_to_use = SUPABASE_KEY
+_supabase_client = None
 
-# Initialize Supabase
-supabase: Client = create_client(SUPABASE_URL, key_to_use)
+def get_supabase():
+    global _supabase_client
+    if _supabase_client is None:
+        from supabase import create_client
+        # Use Service Key if available to bypass RLS for backend operations
+        key_to_use = SUPABASE_SERVICE_KEY if SUPABASE_SERVICE_KEY else SUPABASE_KEY
+        _supabase_client = create_client(SUPABASE_URL, key_to_use)
+    return _supabase_client
 
 def process_pdf(file, user_id: str):
+    import os
+    import tempfile
+    import uuid
+    import shutil
+    import time
+    from services.ocr_service import init_ocr, fast_extract_pdf
+    from services.chunk_service import extract_hierarchy_and_chunk
+    from services.embedding_service import embed_chunks
+    from services.vector_service import store_embeddings
+
+    supabase = get_supabase()
+
     print(f"Processing PDF for user {user_id}...")
+    
     # Create a temporary file to save the uploaded content
     # Use mkstemp to generate a unique safe path with .pdf extension
     fd, temp_file_path = tempfile.mkstemp(suffix=".pdf")
     os.close(fd) # Close the file descriptor immediately, we just need the path
     
     job_id = None
-
 
     try:
         # Save the uploaded file to the temporary path
@@ -64,6 +58,7 @@ def process_pdf(file, user_id: str):
             return
 
         original_filename = getattr(file, 'filename', 'uploaded_file.pdf')
+
 
         # --- Supabase Integration ---
         try:
@@ -92,12 +87,6 @@ def process_pdf(file, user_id: str):
 
         except Exception as e:
             print(f"Error uploading to Supabase: {e}")
-            # Decide if we implementation should fail here or continue. 
-            # Prompt implies Supabase is the storage, so we should probably log error.
-            # Assuming we can continue processing even if upload fails? 
-            # Or maybe we should raise so the user knows.
-            # "Modify the system so that PDF files ... are stored in Supabase"
-            # I'll let it continue but log it, or simple raise to ensure compliance.
             raise e
 
         # Advanced Chunking with Hierarchy
@@ -146,4 +135,3 @@ def process_pdf(file, user_id: str):
 
 if __name__ == "__main__":
     print("This pipeline is intended to be run via the API with a file upload.")
-   

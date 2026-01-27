@@ -4,10 +4,11 @@ import os
 # Add the backend directory to sys.path so we can import from db and services
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from db.vector_client import client, COLLECTION
+from db.vector_client import get_vector_client, COLLECTION
 from services.embedding_service import embed_chunks
 
 def store_embeddings(chunks_data, vectors):
+    client = get_vector_client()
     # chunks_data is expected to be [{"id":..., "content":..., "metadata":...}, ...]
     payloads = []
     for chunk in chunks_data:
@@ -27,9 +28,9 @@ def store_embeddings(chunks_data, vectors):
     print("embeddings stored Successfully")
 
 
-from qdrant_client import models
-
 def search(query_vector, k=4, document_id=None):
+    from qdrant_client import models
+    client = get_vector_client()
     query_filter = None
     if document_id:
         query_filter = models.Filter(
@@ -60,6 +61,8 @@ def search(query_vector, k=4, document_id=None):
 
 def delete_vectors_by_doc_id(document_id):
     """Delete all vectors associated with a document ID."""
+    from qdrant_client import models
+    client = get_vector_client()
     try:
         client.delete(
             collection_name=COLLECTION,
@@ -80,6 +83,7 @@ def delete_vectors_by_doc_id(document_id):
         # Log but maybe don't raise? Or raise if critical. 
         # Usually better to try and clean up as much as possible.
         raise e
+
 
 if __name__ == "__main__":
     query = "what is generative ai"

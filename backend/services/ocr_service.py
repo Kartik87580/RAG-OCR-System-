@@ -3,8 +3,8 @@ import shutil
 import time
 import zipfile
 from typing import Dict, Any
-from docling.document_converter import DocumentConverter
-from docling_core.types.doc import DocItemLabel, TableItem
+
+
 
 # Global job storage (production: use Redis)
 JOBS: Dict[str, Dict[str, Any]] = {}
@@ -15,10 +15,11 @@ OCR_MODEL = None
 def init_ocr():
     global OCR_MODEL
     if OCR_MODEL is None:
-        print("🔄 Loading Docling (takes a moment)...")
+        from docling.document_converter import DocumentConverter
         from docling.datamodel.base_models import InputFormat
         from docling.datamodel.pipeline_options import PdfPipelineOptions
         from docling.document_converter import PdfFormatOption
+        print("🔄 Loading Docling (takes a moment)...")
         
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = True
@@ -36,6 +37,7 @@ def write_job(job_id: str, data: Dict):
     JOBS[job_id] = {**JOBS.get(job_id, {}), **data}
 
 def export_chapters_final(result, output_dir: Path) -> tuple[str, list]:
+    from docling_core.types.doc import DocItemLabel, TableItem
     doc = result.document
     current_chapter_name = "Introduction"
     current_content = []

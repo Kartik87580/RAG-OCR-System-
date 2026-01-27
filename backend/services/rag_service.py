@@ -1,13 +1,15 @@
-# Service for RAG (Retrieval-Augmented Generation)
-
-from services.embedding_service import embed_chunks
-from services.vector_service import search
-import google.generativeai as genai
 from config import GEMINI_API_KEY
 
-genai.configure(api_key=GEMINI_API_KEY)
-# model = genai.GenerativeModel("gemini-1.5-flash") # 1.5 not found in this env
-model = genai.GenerativeModel("gemini-2.5-flash") 
+_gemini_model = None
+
+def get_gemini_model():
+    global _gemini_model
+    if _gemini_model is None:
+        import google.generativeai as genai
+        print("🔄 Initializing Gemini AI...")
+        genai.configure(api_key=GEMINI_API_KEY)
+        _gemini_model = genai.GenerativeModel("gemini-1.5-flash") # Using 1.5-flash as default stable choice
+    return _gemini_model
 
 def detect_mode(question: str) -> str:
     """
@@ -15,35 +17,9 @@ def detect_mode(question: str) -> str:
     """
     keywords = ["summary", "summarize", "overview", "explain document", "full explanation", "document summary"]
     q_lower = question.lower()
-    
     for k in keywords:
         if k in q_lower:
             return "summary"
-            
-    return "chat"
-
-# ... (rest of file) ...
-
-# UPDATE THE RETRY LOGIC MSG IN answer_question FUNCTION (Implicitly targeting it via context if I can, or just let me rewrite the function)
-# I will use the EndLine/StartLine to target the bottom of the file where answer_question is
-
-# Wait, I need to match the file content.
-# The previous step replaced lines 6-7 and added imports.
-# I will just replace `model = ...` line.
-
-# And then I will replace the return string in answer_question.
-
-def detect_mode(question: str) -> str:
-    """
-    Detects if the user wants a full summary or a quick chat answer.
-    """
-    keywords = ["summary", "summarize", "overview", "explain document", "full explanation", "document summary"]
-    q_lower = question.lower()
-    
-    for k in keywords:
-        if k in q_lower:
-            return "summary"
-            
     return "chat"
 
 SUMMARY_PROMPT_TEMPLATE = """You are an assistant that summarizes documents.
@@ -98,20 +74,17 @@ Question:
 Answer:"""
 
 def build_rag_context(question, document_id=None):
-    # Step 4: RAG Query Function
+    from services.embedding_service import embed_chunks
+    from services.vector_service import search
+    
     q_vec = embed_chunks([question])[0]
     results = search(q_vec, document_id=document_id)
-    print(f"DEBUG: Retrieved {len(results)} chunks for question: {question}")
     
     retrieved_chunks = []
     sources = []
-    
     for r in results:
-        # Check if payload exists and handle it safely
         payload = getattr(r, 'payload', {}) or {}
         text = payload.get("text", "")
-        
-        # Build chunk object for return
         chunk_obj = {
             "id": getattr(r, 'id', 'unknown'),
             "score": getattr(r, 'score', 0.0),
@@ -119,8 +92,6 @@ def build_rag_context(question, document_id=None):
             "metadata": {k:v for k,v in payload.items() if k != "text"}
         }
         retrieved_chunks.append(chunk_obj)
-        
-        # Extract source (deduplicate later if needed, but list implied)
         source = {
             "page": payload.get("page"),
             "chapter": payload.get("chapter"),
@@ -129,12 +100,10 @@ def build_rag_context(question, document_id=None):
         if source not in sources:
             sources.append(source)
 
-    # Format context with metadata for citation support
     formatted_context_parts = []
     for c in retrieved_chunks:
         meta = c["metadata"]
         header = f"[Source: Page {meta.get('page', '?')}, Chapter: {meta.get('chapter', 'Unknown')}, Section: {meta.get('section', 'Unknown')}]"
-        # Escape curly braces for .format() safety
         safe_content = c['content'].replace("{", "{{").replace("}", "}}")
         formatted_context_parts.append(f"{header}\n{safe_content}")
     
@@ -142,19 +111,13 @@ def build_rag_context(question, document_id=None):
     if not context_str.strip():
         context_str = "No relevant content found in document."
     
-    # DETERMINE MODE & SELECT PROMPT
     mode = detect_mode(question)
-    print(f"DEBUG: Detected Mode: {mode}")
-    print(f"DEBUG: Context Length: {len(context_str)} chars")
-
     try:
         if mode == "summary":
             prompt = SUMMARY_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
         else:
             prompt = CHAT_PROMPT_TEMPLATE.format(retrieved_context=context_str, user_question=question)
     except Exception as e:
-        print(f"Error formatting prompt: {e}")
-        # Fallback to simple concatenation if format fails (unlikely with escaping but safe)
         prompt = f"Context:\n{context_str}\n\nQuestion:\n{question}\n\nAnswer:"
     
     return {
@@ -163,29 +126,26 @@ def build_rag_context(question, document_id=None):
         "sources": sources
     }
 
-import time
-from google.api_core import exceptions
-
 def answer_question(question, document_id=None):
-    rag_data = build_rag_context(question, document_id=document_id)
+    import time
+    from google.api_core import exceptions
     
-    # Retry logic for Rate Limits (429 ResourceExhausted)
+    rag_data = build_rag_context(question, document_id=document_id)
+    model = get_gemini_model()
+    
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            # Generate answer using the prompt
             response = model.generate_content(rag_data["prompt"])
             return response.text
         except exceptions.ResourceExhausted:
             if attempt < max_retries - 1:
-                sleep_time = (attempt + 1) * 2  # 2s, 4s, 6s...
-                print(f"Rate limit hit. Retrying in {sleep_time} seconds...")
+                sleep_time = (attempt + 1) * 2
                 time.sleep(sleep_time)
             else:
-                return "### ⚠️ Rate Limit Reached\n\nYou have hit the free tier limit for the AI model (Gemini 2.5 Flash). Please wait a minute before trying again."
+                return "### ⚠️ Rate Limit Reached\n\nYou have hit the free tier limit for the AI model. Please wait a minute before trying again."
         except Exception as e:
-             # Pass other errors up
              raise e
-             
     return "Failed to generate answer."
+
 
